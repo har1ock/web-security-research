@@ -1,0 +1,17 @@
+services:
+  flask-v:
+    build: ./flask-app
+    ports: ["5001:5000"]
+    environment:
+      SECURE: "0"
+    cpus: 1
+    mem_limit: 512m
+
+  flask-p:
+    build: ./flask-app
+    ports: ["5101:5000"]
+    environment:
+      SECURE: "1"
+      SECRET_KEY: "change-me-long-random-string"
+    cpus: 1
+    mem_limit: 512m
