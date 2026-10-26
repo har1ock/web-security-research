@@ -212,3 +212,24 @@ def get_note(note_id):
     if SECURE and row["owner_id"] != uid:
         return jsonify(error="forbidden"), 403
     return jsonify(id=row["id"], owner_id=row["owner_id"], text=row["text"])
+
+
+@app.get("/profile")
+def profile():
+    uid = session.get("user_id")
+    if uid is None:
+        return jsonify(error="login required"), 401
+    row = get_db().execute(
+        "SELECT username, email FROM users WHERE id = ?", (uid,)
+    ).fetchone()
+    return jsonify(username=row["username"], email=row["email"])
+
+
+if os.environ.get("TEST_MODE") == "1":
+    @app.post("/__reset")
+    def reset_state():
+        db = get_db()
+        db.execute("DELETE FROM comments")
+        db.execute("UPDATE users SET email = username || '@example.com'")
+        db.commit()
+        return jsonify(message="reset")
