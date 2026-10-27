@@ -4,6 +4,7 @@ services:
     ports: ["5001:5000"]
     environment:
       SECURE: "0"
+      TEST_MODE: "1"
     cpus: 1
     mem_limit: 512m
 
@@ -13,5 +14,25 @@ services:
     environment:
       SECURE: "1"
       SECRET_KEY: "change-me-long-random-string"
+      TEST_MODE: "1"
+    cpus: 1
+    mem_limit: 512m
+
+  django-v:
+    build: ./django-app
+    ports: ["5002:5000"]
+    environment:
+      SECURE: "0"
+      TEST_MODE: "1"
+    cpus: 1
+    mem_limit: 512m
+
+  django-p:
+    build: ./django-app
+    ports: ["5102:5000"]
+    environment:
+      SECURE: "1"
+      SECRET_KEY: "change-me-another-long-random-string"
+      TEST_MODE: "1"
     cpus: 1
     mem_limit: 512m

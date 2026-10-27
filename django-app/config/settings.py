@@ -7,6 +7,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Перемикач між захищеною версією і ні 
 SECURE  = os.environ.get("SECURE", "0") == "1"
 
+TEST_MODE = os.environ.get("TEST_MODE", "0") == "1"
+
 
 SECRET_KEY = os.environ.get("SECRET_KEY", "dev") if SECURE else "dev"
 
