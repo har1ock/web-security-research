@@ -36,3 +36,23 @@ services:
       TEST_MODE: "1"
     cpus: 1
     mem_limit: 512m
+  
+
+  fastapi-v:
+    build: ./fastapi-app
+    ports: ["5003:5000"]
+    environment:
+      SECURE: "0"
+      TEST_MODE: "1"
+    cpus: 1
+    mem_limit: 512m
+
+  fastapi-p:
+    build: ./fastapi-app
+    ports: ["5103:5000"]
+    environment:
+      SECURE: "1"
+      SECRET_KEY: "change-me-yet-another-long-random-string"
+      TEST_MODE: "1"
+    cpus: 1
+    mem_limit: 512m

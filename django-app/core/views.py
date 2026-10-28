@@ -8,6 +8,7 @@ from django.middleware.csrf import get_token
 from django.template import Context, Template
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
+from django.utils.safestring import mark_safe
 
 from .models import Comment, Note
 
@@ -125,6 +126,11 @@ def get_note(request, note_id):
         return JsonResponse({"error": "forbidden"}, status=403)
     return JsonResponse({"id": note.pk, "owner_id": note.owner_id, "text": note.text})
 
+@require_GET
+def greet(request):
+    name = request.GET.get("name", "")
+    return render("<h1>Hello {{ n }}</h1>", n=name if SECURE else mark_safe(name))
+
 
 @require_GET
 def profile(request):
@@ -143,3 +149,4 @@ def reset_state(request):
         u.email = f"{u.username}@example.com"
         u.save(update_fields=["email"])
     return JsonResponse({"message": "reset"})
+

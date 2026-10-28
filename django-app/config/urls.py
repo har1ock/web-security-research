@@ -12,4 +12,5 @@ urlpatterns = [
     path("notes/<int:note_id>", views.get_note),
     path("profile", views.profile),
     path("__reset", views.reset_state),
+    path("greet", views.greet),
 ]

@@ -3,6 +3,7 @@ import os
 import secrets
 import sqlite3
 
+from markupsafe import Markup
 from flask import Flask, g, jsonify, render_template_string, request, session
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -189,7 +190,7 @@ def change_email():
     if SECURE:
         sent = request.form.get("csrf_token", "")
         # compare_digest: порівняння за сталий час (проти timing-атак)
-        if not hmac.compare_digest(sent, session.get("csrf_token", "")):
+        if not hmac.compare_digest(sent.encode(), session.get("csrf_token", "").encode()):
             return jsonify(error="bad csrf token"), 403
     email = request.form.get("email", "")
     db = get_db()
@@ -223,6 +224,12 @@ def profile():
         "SELECT username, email FROM users WHERE id = ?", (uid,)
     ).fetchone()
     return jsonify(username=row["username"], email=row["email"])
+
+
+@app.get("/greet")
+def greet():
+    name = request.args.get("name", "")
+    return render_template_string("<h1>Hello {{ n }}</h1>", n=name if SECURE else Markup(name))
 
 
 if os.environ.get("TEST_MODE") == "1":

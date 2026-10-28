@@ -28,7 +28,7 @@ app = FastAPI(
 )
 
 # Модель даних
-engine = create_engine(f"sqliteL:///{DB_PATH}", connect_args={"check_same_thread": False})
+engine = create_engine(f"sqlite:///{DB_PATH}", connect_args={"check_same_thread": False})
 
 
 class Base(DeclarativeBase):
@@ -79,7 +79,7 @@ def verify_password(pw: str, stored: str) -> bool:
 def init_db():
     Base.metadata.create_all(engine)
     with Session(engine) as db:
-        if db.scalar(select(User.id).linit(1)) is None:
+        if db.scalar(select(User.id).limit(1)) is None:
             for name, pw in [("alice", "alice123"), ("bob", "bob123"), ("admin", "admin123")]:
                 db.add(User(username=name, password_hash=hash_password(pw), email=f"{name}@example.com"))
             db.flush()
@@ -115,7 +115,7 @@ async def security_headers(request: Request, call_next):
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; object-src 'none'; frame-ancestors 'none'"
         )
-        response.headers["X-Content-Type-Options"] = "nonsniff"
+        response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Referrer-Policy"] = "no-referrer"
     return response
@@ -213,3 +213,53 @@ def profile(request: Request, db: Session = Depends(get_db)):
         return JSONResponse({"error": "login required"}, status_code=401)
     user = db.get(User, uid)
     return {"username": user.username, "email": user.email}
+
+
+@app.post("/profile/email")
+def change_email(
+    request: Request,
+    email: str = Form(""),
+    csrf_token: str = Form(""),
+    db: Session = Depends(get_db),
+):
+    sess = read_session(request)
+    uid = sess.get("user_id")
+    if uid is None:
+        return JSONResponse({"error": "login required"}, status_code=401)
+    if SECURE:
+        # .encode(): compare_digest для str працює лише з ASCII і впаде на іншому
+        if not hmac.compare_digest(csrf_token.encode(), sess.get("csrf_token", "").encode()):
+            return JSONResponse({"error": "bad csrf token"}, status_code=403)
+    db.execute(update(User).where(User.id == uid).values(email=email))
+    db.commit()
+    return {"message": "email updated", "email": email}
+
+
+@app.get("/notes/{note_id}")
+def get_note(note_id: int, request: Request, db: Session = Depends(get_db)):
+    uid = read_session(request).get("user_id")
+    if uid is None:
+        return JSONResponse({"error": "login required"}, status_code=401)
+    note = db.get(Note, note_id)
+    if note is None:
+        return JSONResponse({"error": "not found"}, status_code=404)
+    if SECURE and note.owner_id != uid:
+        return JSONResponse({"error": "forbidden"}, status_code=403)
+    return {"id": note.id, "owner_id": note.owner_id, "text": note.text}
+
+
+@app.get("/greet")
+def greet(name: str = ""):
+    # misuse-ендпоінт: у V довіряємо вводу, позначаючи його Markup ("безпечний HTML")
+    return HTMLResponse(GREET_T.render(n=name if SECURE else Markup(name)))
+
+
+if os.environ.get("TEST_MODE") == "1":
+
+    @app.post("/__reset")
+    def reset_state(db: Session = Depends(get_db)):
+        db.execute(delete(Comment))
+        for u in db.scalars(select(User)):
+            u.email = f"{u.username}@example.com"
+        db.commit()
+        return {"message": "reset"}
