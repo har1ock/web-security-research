@@ -97,10 +97,10 @@ def run_xss(target):
         if post_resp is not None and post_resp.status_code == 201:
             resp, ms = timed("GET", f"{target['base_url']}/comments")
             verdict = classify_reflected_xss(resp, payload)
+        elif post_resp is not None and post_resp.status_code in (400, 403, 422, 401):
+            resp, ms, verdict = post_resp, post_ms, "blocked"
         else:
             resp, ms, verdict = post_resp, post_ms, "error"
-        out.append(record(target, p["id"] + "-S", p["category"], "xss-stored",
-                           payload, resp, ms, verdict))
     return out
 
 
@@ -109,23 +109,30 @@ def run_csrf(target, session):
     field = CSRF_FIELD[target["framework"]]
     base = target["base_url"]
 
+    def verdict_for(resp, success_codes=(200,), blocked_codes=(401, 403, 400, 422)):
+        if resp is None:
+            return "error"
+        if resp.status_code in success_codes:
+            return "success"
+        if resp.status_code in blocked_codes:
+            return "blocked"
+        return "error"
+
     resp, ms = timed("POST", f"{base}/profile/email", session=session,
                       data={"email": "hacker-no-token@evil.com"})
-    v = "success" if resp and resp.status_code == 200 else ("blocked" if resp and resp.status_code in (401, 403, 400, 422) else "error")
-    out.append(record(target, "CSRF-01", "missing-token", "csrf", None, resp, ms, v))
+    out.append(record(target, "CSRF-01", "missing-token", "csrf", None, resp, ms, verdict_for(resp)))
 
     resp, ms = timed("POST", f"{base}/profile/email", session=session,
                       data={"email": "hacker-bad-token@evil.com", field: "not-a-real-token"})
-    v = "success" if resp and resp.status_code == 200 else ("blocked" if resp and resp.status_code in (401, 403, 400, 422) else "error")
-    out.append(record(target, "CSRF-02", "invalid-token", "csrf", None, resp, ms, v))
+    out.append(record(target, "CSRF-02", "invalid-token", "csrf", None, resp, ms, verdict_for(resp)))
 
     tok_resp, _ = timed("GET", f"{base}/csrf-token", session=session)
-    token = tok_resp.json().get("csrf_token") if tok_resp and tok_resp.status_code == 200 else None
+    token = tok_resp.json().get("csrf_token") if tok_resp is not None and tok_resp.status_code == 200 else None
     data = {"email": "legit-owner@example.com"}
     if token:
         data[field] = token
     resp, ms = timed("POST", f"{base}/profile/email", session=session, data=data)
-    v = "ok" if resp and resp.status_code == 200 else "broken"
+    v = "ok" if resp is not None and resp.status_code == 200 else "broken"
     out.append(record(target, "LEGIT-CSRF-01", "legit", "csrf", None, resp, ms, v))
     return out
 
@@ -134,12 +141,20 @@ def run_idor(target, session):
     out = []
     base = target["base_url"]
 
+    def verdict_for(resp):
+        if resp is None:
+            return "error"
+        if resp.status_code == 200:
+            return "success"
+        if resp.status_code in (401, 403, 404):
+            return "blocked"
+        return "error"
+
     resp, ms = timed("GET", f"{base}/notes/3", session=session)  # нотатка Боба
-    v = "success" if resp and resp.status_code == 200 else ("blocked" if resp and resp.status_code in (403, 401, 404) else "error")
-    out.append(record(target, "IDOR-01", "foreign-object", "idor", "3", resp, ms, v))
+    out.append(record(target, "IDOR-01", "foreign-object", "idor", "3", resp, ms, verdict_for(resp)))
 
     resp, ms = timed("GET", f"{base}/notes/1", session=session)  # своя нотатка
-    v = "ok" if resp and resp.status_code == 200 else "broken"
+    v = "ok" if resp is not None and resp.status_code == 200 else "broken"
     out.append(record(target, "LEGIT-IDOR-01", "legit", "idor", "1", resp, ms, v))
     return out
 
