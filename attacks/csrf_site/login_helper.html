@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>Login helper (лише для тестів)</title></head>
+<body>
+<h1>Логін під alice на кожну з 6 цілей</h1>
+
+<form action="http://localhost:5001/login" method="POST">
+  <button type="submit">Flask V (5001)</button>
+  <input type="hidden" name="username" value="alice">
+  <input type="hidden" name="password" value="alice123">
+</form>
+
+<form action="http://localhost:5101/login" method="POST">
+  <button type="submit">Flask P (5101)</button>
+  <input type="hidden" name="username" value="alice">
+  <input type="hidden" name="password" value="alice123">
+</form>
+
+<form action="http://localhost:5002/login" method="POST">
+  <button type="submit">Django V (5002)</button>
+  <input type="hidden" name="username" value="alice">
+  <input type="hidden" name="password" value="alice123">
+</form>
+
+<form action="http://localhost:5102/login" method="POST">
+  <button type="submit">Django P (5102)</button>
+  <input type="hidden" name="username" value="alice">
+  <input type="hidden" name="password" value="alice123">
+</form>
+
+<form action="http://localhost:5003/login" method="POST">
+  <button type="submit">FastAPI V (5003)</button>
+  <input type="hidden" name="username" value="alice">
+  <input type="hidden" name="password" value="alice123">
+</form>
+
+<form action="http://localhost:5103/login" method="POST">
+  <button type="submit">FastAPI P (5103)</button>
+  <input type="hidden" name="username" value="alice">
+  <input type="hidden" name="password" value="alice123">
+</form>
+</body>
+</html>

@@ -1,0 +1,1 @@
+http://localhost:5101/search?q=alice (GET)  # C:\Users\xarlo\AppData\Local\Programs\Python\Python314\Scripts\sqlmap -u http://localhost:5101/search?q=alice --batch --level=1 --risk=1 -p q --output-dir=../results/day4/sqlmap/flask-p

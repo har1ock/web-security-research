@@ -1,31 +1,36 @@
-
 import hashlib
 import hmac
 import os
 import secrets
-
 
 from fastapi import Depends, FastAPI, Form, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from itsdangerous import BadSignature, URLSafeSerializer
 from jinja2 import Environment
 from markupsafe import Markup
+from slowapi.errors import RateLimitExceeded
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
 from sqlalchemy import String, Text, create_engine, delete, select, update
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
-
 
 # Конфігурація
 SECURE = os.environ.get("SECURE", "0") == "1"
 DB_PATH = os.environ.get("DB_PATH", "app.db")
 SECRET_KEY = os.environ.get("SECRET_KEY", "dev") if SECURE else "dev"
 
-# P: вимикаємо /docs, /redoc, /openapi.json (інакше API описує сам себе зловмиснику)
+# Спочатку створюємо додаток FastAPI
 app = FastAPI(
     docs_url=None if SECURE else "/docs",
     redoc_url=None if SECURE else "/redoc",
     openapi_url=None if SECURE else "/openapi.json",
 )
+
+limiter = Limiter(key_func=get_remote_address, enabled=SECURE)
+app.state.limiter = limiter
+
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Модель даних
 engine = create_engine(f"sqlite:///{DB_PATH}", connect_args={"check_same_thread": False})
@@ -61,7 +66,7 @@ def get_db():
     """Залежність: одна сесія БД на запит, закривається після відповіді."""
     with Session(engine) as db:
         yield db
-    
+
 
 # Паролі
 def hash_password(pw: str) -> str:
@@ -107,7 +112,7 @@ def read_session(request: Request) -> dict:
         return {}
 
 
-# Заголовки безпеки(лише в P)
+# Заголовки безпеки (лише в P)
 @app.middleware("http")
 async def security_headers(request: Request, call_next):
     response = await call_next(request)
@@ -151,7 +156,8 @@ def index():
 
 
 @app.post("/login")
-def login(username: str = Form(""), password: str = Form(""), db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def login(request: Request, username: str = Form(""), password: str = Form(""), db: Session = Depends(get_db)):
     user = db.scalar(select(User).where(User.username == username))
     if user is None or not verify_password(password, user.password_hash):
         return JSONResponse({"error": "invalid credentials"}, status_code=401)
@@ -184,6 +190,7 @@ def search(q: str = "", db: Session = Depends(get_db)):
             return HTMLResponse("search error", status_code=400)
         return HTMLResponse(f"SQL error: {e}", status_code=500)
     return HTMLResponse(SEARCH_T.render(q=q, rows=rows, raw=not SECURE))
+
 
 @app.post("/comments", status_code=201)
 def add_comment(author: str = Form("anon"), text: str = Form(""), db: Session = Depends(get_db)):
@@ -227,7 +234,6 @@ def change_email(
     if uid is None:
         return JSONResponse({"error": "login required"}, status_code=401)
     if SECURE:
-        # .encode(): compare_digest для str працює лише з ASCII і впаде на іншому
         if not hmac.compare_digest(csrf_token.encode(), sess.get("csrf_token", "").encode()):
             return JSONResponse({"error": "bad csrf token"}, status_code=403)
     db.execute(update(User).where(User.id == uid).values(email=email))
@@ -250,12 +256,10 @@ def get_note(note_id: int, request: Request, db: Session = Depends(get_db)):
 
 @app.get("/greet")
 def greet(name: str = ""):
-    # misuse-ендпоінт: у V довіряємо вводу, позначаючи його Markup ("безпечний HTML")
     return HTMLResponse(GREET_T.render(n=name if SECURE else Markup(name)))
 
 
 if os.environ.get("TEST_MODE") == "1":
-
     @app.post("/__reset")
     def reset_state(db: Session = Depends(get_db)):
         db.execute(delete(Comment))

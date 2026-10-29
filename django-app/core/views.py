@@ -1,4 +1,3 @@
-
 from django.conf import settings
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
@@ -6,9 +5,10 @@ from django.db import DatabaseError, connection
 from django.http import HttpResponse, JsonResponse
 from django.middleware.csrf import get_token
 from django.template import Context, Template
+from django.utils.safestring import mark_safe
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
-from django.utils.safestring import mark_safe
+from django_ratelimit.decorators import ratelimit
 
 from .models import Comment, Note
 
@@ -38,25 +38,25 @@ COMMENTS_HTML = """
 def render(template, **ctx):
     return HttpResponse(Template(template).render(Context(ctx)))
 
+
 @require_GET
 def index(request):
     return JsonResponse({"app": "django", "mode": "secure" if SECURE else "vulnerable"})
 
 
-# /login і /comments звільнені від CSRF в ОБОХ режимах: за контрактом CSRF
-# досліджуємо лише на /profile/email. Без цього Django блокував би наші
-# тестові POST-запити і порівняння було б некоректним.
 @csrf_exempt
 @require_POST
+@ratelimit(key="ip", rate="5/m", block=False)
 def login_view(request):
-    user = authenticate(
-        request,
-        username=request.POST.get("username", ""),
-        password=request.POST.get("password", ""),
-    )
+    if getattr(request, "limited", False) and SECURE:
+        return JsonResponse({"error": "too many requests"}, status=429)
+
+    username = request.POST.get("username", "")
+    password = request.POST.get("password", "")
+    user = authenticate(request, username=username, password=password)
     if user is None:
         return JsonResponse({"error": "invalid credentials"}, status=401)
-    login(request, user) # створює сесію і міняє її ID
+    login(request, user)
     return JsonResponse({"message": "ok", "user": user.username})
 
 
@@ -126,6 +126,7 @@ def get_note(request, note_id):
         return JsonResponse({"error": "forbidden"}, status=403)
     return JsonResponse({"id": note.pk, "owner_id": note.owner_id, "text": note.text})
 
+
 @require_GET
 def greet(request):
     name = request.GET.get("name", "")
@@ -142,11 +143,10 @@ def profile(request):
 @csrf_exempt
 @require_POST
 def reset_state(request):
-    if not settings.TEST_MODE:
+    if not getattr(settings, "TEST_MODE", False):
         return JsonResponse({"error": "not found"}, status=404)
     Comment.objects.all().delete()
     for u in User.objects.all():
         u.email = f"{u.username}@example.com"
         u.save(update_fields=["email"])
     return JsonResponse({"message": "reset"})
-

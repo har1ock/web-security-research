@@ -101,6 +101,9 @@ def run_xss(target):
             resp, ms, verdict = post_resp, post_ms, "blocked"
         else:
             resp, ms, verdict = post_resp, post_ms, "error"
+            
+        out.append(record(target, p["id"] + "-S", p["category"], "xss-stored",
+                          payload, resp, ms, verdict))
     return out
 
 
@@ -168,6 +171,31 @@ def run_legit_search(target):
         out.append(record(target, test_id, "legit", "sqli", q, resp, ms, v))
     return out
 
+def run_brute_force(target):
+    out = []
+    base = target["base_url"]
+
+    # легітимний вхід у чистому стані: захист не повинен його ламати
+    resp, ms = timed("POST", f"{base}/login", data={"username": "bob", "password": "bob123"})
+    v = "ok" if resp is not None and resp.status_code == 200 else "broken"
+    out.append(record(target, "LEGIT-BRUTE-01", "legit", "brute-force", None, resp, ms, v))
+
+    # серія невдалих спроб на одного користувача
+    statuses = []
+    for i in range(20):
+        resp, ms = timed("POST", f"{base}/login", data={"username": "alice", "password": f"wrong{i}"})
+        statuses.append(resp.status_code if resp is not None else None)
+
+    if all(s is None for s in statuses):
+        v = "error"
+    elif any(s in (429, 423, 403) for s in statuses):
+        v = "blocked"
+    else:
+        v = "success"
+    out.append(record(target, "BRUTE-01", "rate-limit", "brute-force",
+                      f"20 спроб, статуси: {statuses}", None, None, v))
+    return out
+
 
 def main():
     RAW_LOG.unlink(missing_ok=True)
@@ -185,6 +213,7 @@ def main():
         all_rows += run_csrf(target, session)
         all_rows += run_idor(target, session)
         all_rows += run_legit_search(target)
+        all_rows += run_brute_force(target)
 
     with open(SUMMARY_CSV, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=["framework", "mode", "test_id", "category", "attack", "verdict"])
