@@ -166,11 +166,11 @@ django,vulnerable,XSS-B01-S,broken-tag,xss-stored,success
 django,vulnerable,XSS-B02-R-search,broken-tag,xss-reflected,success
 django,vulnerable,XSS-B02-R-greet,broken-tag,xss-reflected,success
 django,vulnerable,XSS-B02-S,broken-tag,xss-stored,success
-django,vulnerable,CSRF-01,missing-token,csrf,blocked
-django,vulnerable,CSRF-02,invalid-token,csrf,blocked
-django,vulnerable,LEGIT-CSRF-01,legit,csrf,broken
-django,vulnerable,IDOR-01,foreign-object,idor,blocked
-django,vulnerable,LEGIT-IDOR-01,legit,idor,broken
+django,vulnerable,CSRF-01,missing-token,csrf,success
+django,vulnerable,CSRF-02,invalid-token,csrf,success
+django,vulnerable,LEGIT-CSRF-01,legit,csrf,ok
+django,vulnerable,IDOR-01,foreign-object,idor,success
+django,vulnerable,LEGIT-IDOR-01,legit,idor,ok
 django,vulnerable,LEGIT-SEARCH-01,legit,sqli,ok
 django,vulnerable,LEGIT-SEARCH-02,legit,sqli,ok
 django,vulnerable,LEGIT-SEARCH-03,legit,sqli,ok

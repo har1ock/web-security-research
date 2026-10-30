@@ -34,9 +34,13 @@ COMMENTS_HTML = """
 {% endfor %}
 """
 
+_search_tmpl = Template(SEARCH_HTML)
+_comments_tmpl = Template(COMMENTS_HTML)
+_greet_tmpl = Template("<h1>Hello {{ n }}</h1>")
 
-def render(template, **ctx):
-    return HttpResponse(Template(template).render(Context(ctx)))
+
+def render(tmpl, **ctx):
+    return HttpResponse(tmpl.render(Context(ctx)))
 
 
 @require_GET
@@ -81,7 +85,7 @@ def search(request):
         if SECURE:
             return HttpResponse("search error", status=400)
         return HttpResponse(f"SQL error: {e}", status=500)  # V: витік деталей
-    return render(SEARCH_HTML, q=q, rows=rows, raw=not SECURE)
+    return render(_search_tmpl, q=q, rows=rows, raw=not SECURE)
 
 
 @csrf_exempt
@@ -94,7 +98,7 @@ def comments(request):
         )
         return JsonResponse({"message": "saved"}, status=201)
     rows = Comment.objects.values("author", "text")
-    return render(COMMENTS_HTML, rows=rows, raw=not SECURE)
+    return render(_comments_tmpl, rows=rows, raw=not SECURE)
 
 
 @require_GET
@@ -130,7 +134,7 @@ def get_note(request, note_id):
 @require_GET
 def greet(request):
     name = request.GET.get("name", "")
-    return render("<h1>Hello {{ n }}</h1>", n=name if SECURE else mark_safe(name))
+    return render(_greet_tmpl, n=name if SECURE else mark_safe(name))
 
 
 @require_GET

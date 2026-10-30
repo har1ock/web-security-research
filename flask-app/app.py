@@ -118,6 +118,12 @@ COMMENTS_HTML = """
 """
 
 
+_search_tmpl = app.jinja_env.from_string(SEARCH_HTML)
+_comments_tmpl = app.jinja_env.from_string(COMMENTS_HTML)
+_greet_tmpl = app.jinja_env.from_string("<h1>Hello {{ n }}</h1>")
+
+
+
 # Ендпоінти
 @app.get("/")
 def index():
@@ -158,7 +164,7 @@ def search():
         if SECURE:
             return "search error", 400
         return f"SQL error: {e}", 500
-    return render_template_string(SEARCH_HTML, q=q, rows=rows, raw=not SECURE)
+    return _search_tmpl.render(q=q, rows=rows, raw=not SECURE)
 
 
 @app.post("/comments")
@@ -174,7 +180,7 @@ def add_comment():
 @app.get("/comments")
 def list_comments():
     rows = get_db().execute("SELECT author, text FROM comments").fetchall()
-    return render_template_string(COMMENTS_HTML, rows=rows, raw=not SECURE)
+    return _comments_tmpl.render(rows=rows, raw=not SECURE)
 
 
 @app.get("/csrf-token")
@@ -229,7 +235,7 @@ def profile():
 @app.get("/greet")
 def greet():
     name = request.args.get("name", "")
-    return render_template_string("<h1>Hello {{ n }}</h1>", n=name if SECURE else Markup(name))
+    return _greet_tmpl.render(n=name if SECURE else Markup(name))
 
 
 if os.environ.get("TEST_MODE") == "1":
