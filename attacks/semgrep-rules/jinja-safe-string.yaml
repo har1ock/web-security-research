@@ -7,7 +7,7 @@ rules:
       автоекранування та відкриває шлях для XSS, якщо значення
       походить від користувача.
     patterns:
-      - pattern-regex: '\|\s*safe\s*\}\}'
+      - pattern-regex: '\{\{[^}]*\|\s*safe\b[^}]*\}\}'
     metadata:
       cwe: "CWE-79"
       owasp: "A03:2021"

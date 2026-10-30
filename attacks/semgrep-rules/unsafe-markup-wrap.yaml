@@ -1,0 +1,21 @@
+rules:
+  - id: markup-wrapping-non-literal
+    languages: [python]
+    severity: WARNING
+    message: >
+      Виклик Markup()/mark_safe() над значенням, що не є рядковим
+      літералом, вимикає автоекранування для цього значення. Якщо
+      воно походить від користувача (request), це відкриває XSS.
+    patterns:
+      - pattern-either:
+          - pattern: markupsafe.Markup($X)
+          - pattern: Markup($X)
+          - pattern: django.utils.safestring.mark_safe($X)
+          - pattern: mark_safe($X)
+      - metavariable-pattern:
+          metavariable: $X
+          patterns:
+            - pattern-not: "\"...\""
+    metadata:
+      cwe: "CWE-79"
+      owasp: "A03:2021"
