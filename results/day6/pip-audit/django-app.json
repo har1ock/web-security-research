@@ -1,0 +1,1 @@
+{"dependencies": [{"name": "django", "version": "5.2.18", "vulns": []}, {"name": "gunicorn", "version": "22.0.0", "vulns": []}, {"name": "django-ratelimit", "version": "4.1.0", "vulns": []}, {"name": "asgiref", "version": "3.13.0", "vulns": []}, {"name": "sqlparse", "version": "0.6.0", "vulns": []}, {"name": "tzdata", "version": "2026.6", "vulns": []}], "fixes": []}

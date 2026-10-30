@@ -1,0 +1,11 @@
+framework,rule_id,file,line,severity,message
+flask,dockerfile.security.missing-user.missing-user,flask-app\Dockerfile,7,ERROR,"By not specifying a USER, a program in the container may run as 'root'. This is a security hazard. If an attacker can control a process running as roo"
+flask,python.django.security.injection.sql.sql-injection-using-db-cursor-execute.sql-injection-db-cursor-execute,flask-app\app.py,145,WARNING,User-controlled data from a request is passed to 'execute()'. This could lead to a SQL injection and therefore protected information could be leaked. 
+flask,python.flask.security.injection.tainted-sql-string.tainted-sql-string,flask-app\app.py,155,ERROR,Detected user input used to manually construct a SQL string. This is usually bad practice because manual construction could accidentally result in a S
+flask,python.flask.security.audit.debug-enabled.debug-enabled,flask-app\app.py,246,WARNING,"Detected Flask app with debug=True. Do not deploy to production with this flag enabled as it will leak sensitive information. Instead, consider using "
+django,dockerfile.security.missing-user.missing-user,django-app\Dockerfile,7,ERROR,"By not specifying a USER, a program in the container may run as 'root'. This is a security hazard. If an attacker can control a process running as roo"
+django,python.django.security.injection.sql.sql-injection-using-db-cursor-execute.sql-injection-db-cursor-execute,django-app\core\views.py,65,WARNING,User-controlled data from a request is passed to 'execute()'. This could lead to a SQL injection and therefore protected information could be leaked. 
+fastapi,dockerfile.security.missing-user.missing-user,fastapi-app\Dockerfile,6,ERROR,"By not specifying a USER, a program in the container may run as 'root'. This is a security hazard. If an attacker can control a process running as roo"
+django,attacks.semgrep-rules.jinja-safe-filter-in-string-literal,django-app\core\views.py,21,WARNING,|safe filter in string-literal template
+django,attacks.semgrep-rules.jinja-safe-filter-in-string-literal,django-app\core\views.py,23,WARNING,|safe filter in string-literal template
+django,attacks.semgrep-rules.jinja-safe-filter-in-string-literal,django-app\core\views.py,33,WARNING,|safe filter in string-literal template

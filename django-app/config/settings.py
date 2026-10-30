@@ -15,7 +15,8 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "dev") if SECURE else "dev"
 
 DEBUG = False
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "django-p"] if SECURE else ["*"]
+#ALLOWED_HOSTS = ["localhost", "127.0.0.1", "django-p"] if SECURE else ["*"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "django-p", "host.docker.internal"] if SECURE else ["*"] #лише для тесту
 
 
 # Application definition
@@ -64,4 +65,4 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 SESSION_COOKIE_HTTPONLY = SECURE
 SESSION_COOKIE_SAMESITE = "Lax" if SECURE else "None"
-SESSION_COOKIE_SECURE = not SECURE
+

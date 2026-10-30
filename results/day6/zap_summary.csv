@@ -1,0 +1,69 @@
+target,alert,risk,confidence,count,cwe_id
+flask-v,SQL Injection,High,1,1,89
+flask-v,Content Security Policy (CSP) Header Not Set,Medium,3,3,693
+flask-v,Missing Anti-clickjacking Header,Medium,2,3,1021
+flask-v,A Server Error response code was returned by the server,Low,3,1,388
+flask-v,Cross-Origin-Embedder-Policy Header Missing or Invalid,Low,2,3,693
+flask-v,Cross-Origin-Opener-Policy Header Missing or Invalid,Low,2,3,693
+flask-v,Cross-Origin-Resource-Policy Header Missing or Invalid,Low,2,5,693
+flask-v,Permissions Policy Header Not Set,Low,2,3,693
+flask-v,Unexpected Content-Type was returned,Low,3,26,-1
+flask-v,X-Content-Type-Options Header Missing,Low,2,5,693
+flask-v,A Client Error response code was returned by the server,Informational,3,27,388
+flask-v,Authentication Request Identified,Informational,3,1,-1
+flask-v,Non-Storable Content,Informational,2,5,524
+flask-v,Storable and Cacheable Content,Informational,2,4,524
+flask-p,CSP: Failure to Define Directive with No Fallback,Medium,3,3,693
+flask-p,Cross-Origin-Embedder-Policy Header Missing or Invalid,Low,2,3,693
+flask-p,Cross-Origin-Opener-Policy Header Missing or Invalid,Low,2,3,693
+flask-p,Cross-Origin-Resource-Policy Header Missing or Invalid,Low,2,5,693
+flask-p,Permissions Policy Header Not Set,Low,2,3,693
+flask-p,Unexpected Content-Type was returned,Low,3,27,-1
+flask-p,A Client Error response code was returned by the server,Informational,3,28,388
+flask-p,Authentication Request Identified,Informational,3,1,-1
+flask-p,Non-Storable Content,Informational,2,5,524
+flask-p,Storable and Cacheable Content,Informational,2,4,524
+django-v,SQL Injection,High,1,1,89
+django-v,Content Security Policy (CSP) Header Not Set,Medium,3,3,693
+django-v,A Server Error response code was returned by the server,Low,3,1,388
+django-v,Cross-Origin-Embedder-Policy Header Missing or Invalid,Low,2,3,693
+django-v,Cross-Origin-Resource-Policy Header Missing or Invalid,Low,2,5,693
+django-v,Permissions Policy Header Not Set,Low,2,3,693
+django-v,Unexpected Content-Type was returned,Low,3,26,-1
+django-v,A Client Error response code was returned by the server,Informational,3,27,388
+django-v,Authentication Request Identified,Informational,3,1,-1
+django-v,Non-Storable Content,Informational,2,5,524
+django-v,Storable and Cacheable Content,Informational,2,4,524
+django-p,CSP: Failure to Define Directive with No Fallback,Medium,3,4,693
+django-p,Cross-Origin-Embedder-Policy Header Missing or Invalid,Low,2,3,693
+django-p,Cross-Origin-Resource-Policy Header Missing or Invalid,Low,2,5,693
+django-p,Permissions Policy Header Not Set,Low,2,4,693
+django-p,Unexpected Content-Type was returned,Low,3,27,-1
+django-p,A Client Error response code was returned by the server,Informational,3,28,388
+django-p,Authentication Request Identified,Informational,3,1,-1
+django-p,Non-Storable Content,Informational,2,5,524
+django-p,Storable and Cacheable Content,Informational,2,4,524
+fastapi-v,SQL Injection,High,1,1,89
+fastapi-v,Content Security Policy (CSP) Header Not Set,Medium,3,3,693
+fastapi-v,Missing Anti-clickjacking Header,Medium,2,3,1021
+fastapi-v,A Server Error response code was returned by the server,Low,3,1,388
+fastapi-v,Cross-Origin-Embedder-Policy Header Missing or Invalid,Low,2,3,693
+fastapi-v,Cross-Origin-Opener-Policy Header Missing or Invalid,Low,2,3,693
+fastapi-v,Cross-Origin-Resource-Policy Header Missing or Invalid,Low,2,5,693
+fastapi-v,Permissions Policy Header Not Set,Low,2,3,693
+fastapi-v,Unexpected Content-Type was returned,Low,3,8,-1
+fastapi-v,X-Content-Type-Options Header Missing,Low,2,5,693
+fastapi-v,A Client Error response code was returned by the server,Informational,3,23,388
+fastapi-v,Authentication Request Identified,Informational,3,1,-1
+fastapi-v,Non-Storable Content,Informational,2,5,524
+fastapi-v,Storable and Cacheable Content,Informational,2,4,524
+fastapi-p,CSP: Failure to Define Directive with No Fallback,Medium,3,3,693
+fastapi-p,Cross-Origin-Embedder-Policy Header Missing or Invalid,Low,2,3,693
+fastapi-p,Cross-Origin-Opener-Policy Header Missing or Invalid,Low,2,3,693
+fastapi-p,Cross-Origin-Resource-Policy Header Missing or Invalid,Low,2,5,693
+fastapi-p,Permissions Policy Header Not Set,Low,2,3,693
+fastapi-p,Unexpected Content-Type was returned,Low,3,8,-1
+fastapi-p,A Client Error response code was returned by the server,Informational,3,24,388
+fastapi-p,Authentication Request Identified,Informational,3,1,-1
+fastapi-p,Non-Storable Content,Informational,2,5,524
+fastapi-p,Storable and Cacheable Content,Informational,2,4,524

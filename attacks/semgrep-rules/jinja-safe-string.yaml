@@ -1,0 +1,13 @@
+rules:
+  - id: jinja-safe-filter-in-string-literal
+    languages: [python]
+    severity: WARNING
+    message: >
+      Рядковий літерал містить фільтр Jinja2 "|safe", що вимикає
+      автоекранування та відкриває шлях для XSS, якщо значення
+      походить від користувача.
+    patterns:
+      - pattern-regex: '\|\s*safe\s*\}\}'
+    metadata:
+      cwe: "CWE-79"
+      owasp: "A03:2021"
