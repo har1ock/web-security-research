@@ -255,7 +255,7 @@ def get_note(note_id: int, request: Request, db: Session = Depends(get_db)):
 
 
 @app.get("/greet")
-def greet(name: str = ""):
+async def greet(name: str = ""):
     return HTMLResponse(GREET_T.render(n=name if SECURE else Markup(name)))
 
 
