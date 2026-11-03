@@ -1,4 +1,3 @@
-
 import json
 import csv
 from pathlib import Path
@@ -16,20 +15,6 @@ for name in ["flask", "django", "fastapi"]:
             "line": r["start"]["line"],
             "severity": r["extra"]["severity"],
             "message": r["extra"]["message"][:150].replace("\n", " "),
-        })
-
-custom_path = DIR / "custom-safe-rule.json"
-if custom_path.exists():
-    data = json.loads(custom_path.read_text(encoding="utf-8"))
-    for r in data["results"]:
-        framework = "flask" if "flask-app" in r["path"] else "django" if "django-app" in r["path"] else "fastapi"
-        rows.append({
-            "framework": framework,
-            "rule_id": r["check_id"],
-            "file": r["path"],
-            "line": r["start"]["line"],
-            "severity": r["extra"]["severity"],
-            "message": "|safe filter in string-literal template",
         })
 
 with open(DIR.parent / "semgrep_summary.csv", "w", newline="", encoding="utf-8") as f:
