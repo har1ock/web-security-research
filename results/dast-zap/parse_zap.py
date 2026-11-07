@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 import csv
 
-ZAP_DIR = Path(__file__).parent / "zap"
+ZAP_DIR = Path(__file__).parent
 OUT_CSV = Path(__file__).parent / "zap_summary.csv"
 
 TARGETS = ["flask-v", "flask-p", "django-v", "django-p", "fastapi-v", "fastapi-p"]

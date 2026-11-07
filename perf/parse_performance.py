@@ -3,9 +3,9 @@ import csv
 import statistics
 from pathlib import Path
 
-K6_DIR = Path("results/day7/k6")
-STATS_DIR = Path("results/day7/stats")
-OUT = Path("results/day7/performance.csv")
+K6_DIR = Path("results/load-testing/k6")
+STATS_DIR = Path("results/load-testing/stats")
+OUT = Path("results/load-testing/performance.csv")
 
 TARGETS = ["flask-v", "flask-p", "django-v", "django-p", "fastapi-v", "fastapi-p"]
 ENDPOINTS = ["search", "greet"]

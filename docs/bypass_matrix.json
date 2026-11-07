@@ -1,0 +1,5 @@
+{
+  "flask":   {"absent": 4, "bypassed": 2, "weakened": 1},
+  "django":  {"absent": 2, "bypassed": 4, "weakened": 1},
+  "fastapi": {"absent": 4, "bypassed": 2, "weakened": 1}
+}

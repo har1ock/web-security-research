@@ -2,7 +2,7 @@ import json
 import csv
 from pathlib import Path
 
-DIR = Path(__file__).parent / "semgrep"
+DIR = Path(__file__).parent
 rows = []
 
 for name in ["flask", "django", "fastapi"]:
@@ -17,7 +17,7 @@ for name in ["flask", "django", "fastapi"]:
             "message": r["extra"]["message"][:150].replace("\n", " "),
         })
 
-with open(DIR.parent / "semgrep_summary.csv", "w", newline="", encoding="utf-8") as f:
+with open(DIR / "semgrep_summary.csv", "w", newline="", encoding="utf-8") as f:
     w = csv.DictWriter(f, fieldnames=["framework", "rule_id", "file", "line", "severity", "message"])
     w.writeheader()
     w.writerows(rows)

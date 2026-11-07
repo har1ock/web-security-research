@@ -1,161 +1,274 @@
-import pandas as pd
-import matplotlib.pyplot as plt
+"""
+Побудова графіків для розділу "Результати" на основі зведених таблиць
+із results/final-analysis/ та docs/bypass_matrix.json.
+
+Запуск: python analysis/graphs.py
+Передумова: analysis/analysis.py вже виконано, усі final-analysis/*.csv існують.
+"""
+
+from __future__ import annotations
+
+import json
+import sys
 from pathlib import Path
 
-RESULTS = Path(__file__).parent.parent / "results"
-GRAPHS = Path(__file__).parent / "graphs"
-GRAPHS.mkdir(exist_ok=True)
+import matplotlib.pyplot as plt
+import pandas as pd
 
-plt.rcParams["figure.dpi"] = 120
+# --------------------------------------------------------------------------
+# Конфігурація
+# --------------------------------------------------------------------------
 
-#Перший графік
-bypass_data = {
-    "flask":   {"absent": 4, "bypassed": 2, "weakened": 1},
-    "django":  {"absent": 2, "bypassed": 4, "weakened": 1},
-    "fastapi": {"absent": 4, "bypassed": 2, "weakened": 1},
+ROOT_DIR = Path(__file__).resolve().parent.parent
+RESULTS_DIR = ROOT_DIR / "results"
+FINAL_ANALYSIS_DIR = RESULTS_DIR / "final-analysis"
+DOCS_DIR = ROOT_DIR / "docs"
+GRAPHS_DIR = Path(__file__).resolve().parent / "graphs"
+
+FRAMEWORK_ORDER = ["flask", "django", "fastapi"]
+FRAMEWORK_LABELS = {"flask": "Flask", "django": "Django", "fastapi": "FastAPI"}
+
+MODE_COLORS = {"vulnerable": "#d62728", "secure": "#2ca02c"}
+MODE_LABELS = {"vulnerable": "Vulnerable (V)", "secure": "Secure (P)"}
+
+BYPASS_TYPE_COLORS = {"absent": "#7f7f7f", "bypassed": "#d62728", "weakened": "#ff9800"}
+BYPASS_TYPE_LABELS = {
+    "absent": "Absent (фреймворк не захищає)",
+    "bypassed": "Bypassed (свідомо обійдено)",
+    "weakened": "Weakened (послаблена конфігурація)",
 }
-frameworks = ["flask", "django", "fastapi"]
-categories = ["absent", "bypassed", "weakened"]
-colors = {"absent": "#7f7f7f", "bypassed": "#d62728", "weakened": "#ff9800"}
 
-fig, ax = plt.subplots(figsize=(7, 4.5))
-bottom = [0] * len(frameworks)
-for cat in categories:
-    vals = [bypass_data[f][cat] for f in frameworks]
-    bars = ax.bar(frameworks, vals, bottom=bottom, label=cat, color=colors[cat])
-    for i, (v, b) in enumerate(zip(vals, bottom)):
-        if v > 0:
-            ax.text(i, b + v / 2, str(v), ha="center", va="center", color="white", fontweight="bold")
-    bottom = [b + v for b, v in zip(bottom, vals)]
+FRAMEWORK_HATCHES = {"flask": "", "django": "//", "fastapi": ".."}
 
-ax.set_ylabel("Кількість вразливостей")
-ax.set_title("Як саме створено вразливість у Vulnerable-режимі")
-ax.set_xticks(range(len(frameworks)))
-ax.set_xticklabels([f.capitalize() for f in frameworks])
-ax.legend(title="Тип", loc="upper right")
-plt.tight_layout()
-plt.savefig(GRAPHS / "01_bypass_type.png")
-plt.close()
+FIGURE_DPI = 120
+FIGSIZE_SINGLE = (7, 4.5)
+FIGSIZE_WIDE = (10, 5)
+FIGSIZE_DOUBLE = (11, 4.5)
+FIGSIZE_TRIPLE = (14, 4.5)
 
-# Другий графік
-# Другий графік (виправлений)
-asr_attack = pd.read_csv(RESULTS / "day8_asr_by_attack.csv")
 
-categories = sorted(asr_attack["attack"].unique())
-fig, ax = plt.subplots(figsize=(10, 5))
+# --------------------------------------------------------------------------
+# Утиліти
+# --------------------------------------------------------------------------
 
-x = range(len(categories))
-width = 0.12
-# 6 комбінацій: 3 фреймворки * 2 режими
-combos = [
-    ("flask", "vulnerable"), ("flask", "secure"),
-    ("django", "vulnerable"), ("django", "secure"),
-    ("fastapi", "vulnerable"), ("fastapi", "secure")
-]
-offsets = [-2.5, -1.5, -0.5, 0.5, 1.5, 2.5]
+def load_csv(relative_path: str) -> pd.DataFrame:
+    """Завантажує CSV із results/final-analysis/ або results/, з читабельною помилкою."""
+    path = RESULTS_DIR / relative_path
+    if not path.exists():
+        raise FileNotFoundError(
+            f"Не знайдено {path}. Спершу запустіть analysis/analysis.py."
+        )
+    return pd.read_csv(path)
 
-colors_combo = {"vulnerable": "#d62728", "secure": "#2ca02c"}
-hatches = {"flask": "", "django": "//", "fastapi": ".."}
 
-for (fw, mode), off in zip(combos, offsets):
-    vals = []
-    for cat in categories:
-        row = asr_attack[
-            (asr_attack.framework == fw) & 
-            (asr_attack["mode"] == mode) & 
-            (asr_attack.attack == cat)
-        ]
-        # Якщо значення 0, ставимо трохи більше 0 (наприклад, 0.5), 
-        # щоб стовпчик був видимим на графіку біля осі X
-        val = row["ASR_%"].iloc[0] if not row.empty else 0
-        if val == 0 and mode == "secure":
-            val = 0.5  # Візуальна підказка для нульового ASR
-        vals.append(val)
-    
-    ax.bar(
-        [i + off * width for i in x], vals, width,
-        color=colors_combo[mode], 
-        hatch=hatches[fw],
-        label=f"{fw}/{mode}"
+def save_figure(fig: plt.Figure, filename: str) -> None:
+    GRAPHS_DIR.mkdir(parents=True, exist_ok=True)
+    out_path = GRAPHS_DIR / filename
+    fig.tight_layout()
+    fig.savefig(out_path, bbox_inches="tight")
+    plt.close(fig)
+    print(f"  збережено: {out_path.relative_to(ROOT_DIR)}")
+
+
+def framework_mode_from_target(df: pd.DataFrame, target_col: str = "target") -> pd.DataFrame:
+    """Додає колонки framework/mode, виведені з назви цілі на кшталт 'flask-v'."""
+    df = df.copy()
+    df["framework"] = df[target_col].str.replace("-v", "", regex=False).str.replace("-p", "", regex=False)
+    df["mode"] = df[target_col].apply(lambda t: "vulnerable" if t.endswith("-v") else "secure")
+    return df
+
+
+# --------------------------------------------------------------------------
+# Графік 1 — тип походження вразливостей (absent/bypassed/weakened)
+# --------------------------------------------------------------------------
+
+def plot_bypass_type() -> None:
+    """Стовпчикова діаграма: скільки вразливостей кожного типу довелося
+    створити в кожному фреймворку (джерело: docs/bypass_matrix.json)."""
+    matrix_path = DOCS_DIR / "bypass_matrix.json"
+    if not matrix_path.exists():
+        raise FileNotFoundError(f"Не знайдено {matrix_path}")
+    bypass_data = json.loads(matrix_path.read_text(encoding="utf-8"))
+
+    categories = ["absent", "bypassed", "weakened"]
+    fig, ax = plt.subplots(figsize=FIGSIZE_SINGLE)
+
+    bottom = [0.0] * len(FRAMEWORK_ORDER)
+    for category in categories:
+        values = [bypass_data[fw][category] for fw in FRAMEWORK_ORDER]
+        ax.bar(
+            FRAMEWORK_ORDER, values, bottom=bottom,
+            label=BYPASS_TYPE_LABELS[category], color=BYPASS_TYPE_COLORS[category],
+        )
+        for i, (value, base) in enumerate(zip(values, bottom)):
+            if value > 0:
+                ax.text(i, base + value / 2, str(value), ha="center", va="center",
+                         color="white", fontweight="bold")
+        bottom = [b + v for b, v in zip(bottom, values)]
+
+    ax.set_ylabel("Кількість вразливостей")
+    ax.set_title("Як саме створено вразливість у Vulnerable-режимі")
+    ax.set_xticks(range(len(FRAMEWORK_ORDER)))
+    ax.set_xticklabels([FRAMEWORK_LABELS[fw] for fw in FRAMEWORK_ORDER])
+    ax.legend(title="Тип походження", loc="upper center",
+              bbox_to_anchor=(0.5, -0.15), ncol=1, fontsize=8)
+
+    save_figure(fig, "01_bypass_type.png")
+
+
+# --------------------------------------------------------------------------
+# Графік 2 — ASR за категоріями атак, V та P одночасно
+# --------------------------------------------------------------------------
+
+def plot_asr_by_attack() -> None:
+    """Групована стовпчикова діаграма: ASR для кожної категорії атаки,
+    усі 6 комбінацій framework×mode поруч."""
+    asr_attack = load_csv("final-analysis/asr_by_attack.csv")
+
+    attack_categories = sorted(asr_attack["attack"].unique())
+    combos = [(fw, mode) for fw in FRAMEWORK_ORDER for mode in ["vulnerable", "secure"]]
+
+    fig, ax = plt.subplots(figsize=FIGSIZE_WIDE)
+    bar_width = 0.12
+    x_positions = range(len(attack_categories))
+    offsets = [i - (len(combos) - 1) / 2 for i in range(len(combos))]
+
+    for (framework, mode), offset in zip(combos, offsets):
+        values = []
+        for category in attack_categories:
+            row = asr_attack[
+                (asr_attack["framework"] == framework)
+                & (asr_attack["mode"] == mode)
+                & (asr_attack["attack"] == category)
+            ]
+            values.append(row["ASR_%"].iloc[0] if not row.empty else 0.0)
+
+        ax.bar(
+            [x + offset * bar_width for x in x_positions], values, bar_width,
+            color=MODE_COLORS[mode], hatch=FRAMEWORK_HATCHES[framework],
+            edgecolor="black", linewidth=0.3,
+            label=f"{FRAMEWORK_LABELS[framework]} / {MODE_LABELS[mode]}",
+        )
+
+    ax.set_xticks(list(x_positions))
+    ax.set_xticklabels(attack_categories, rotation=30, ha="right")
+    ax.set_ylabel("Attack Success Rate, %")
+    ax.set_ylim(0, 110)
+    ax.set_title("ASR за категоріями атак: Vulnerable vs Secure, усі фреймворки")
+    ax.legend(bbox_to_anchor=(1.02, 1), loc="upper left", fontsize=8, title="Фреймворк / режим")
+
+    save_figure(fig, "02_asr_by_attack_both_modes.png")
+
+
+# --------------------------------------------------------------------------
+# Графіки 3-4 — продуктивність (p95 та RPS)
+# --------------------------------------------------------------------------
+
+def _plot_performance_metric(metric_col: str, ylabel: str, title: str, filename: str) -> None:
+    perf = load_csv("load-testing/performance.csv")
+    perf = framework_mode_from_target(perf)
+
+    endpoints = sorted(perf["endpoint"].unique())
+    fig, axes = plt.subplots(1, len(endpoints), figsize=FIGSIZE_DOUBLE, sharey=False)
+    if len(endpoints) == 1:
+        axes = [axes]
+
+    for ax, endpoint in zip(axes, endpoints):
+        subset = perf[perf["endpoint"] == endpoint]
+        pivot = subset.pivot(index="framework", columns="mode", values=metric_col)
+        pivot = pivot.reindex(FRAMEWORK_ORDER)
+        pivot = pivot.rename(columns=MODE_LABELS)
+        pivot.plot(
+            kind="bar", ax=ax,
+            color=[MODE_COLORS["secure"], MODE_COLORS["vulnerable"]],
+        )
+        ax.set_title(f"/{endpoint}")
+        ax.set_ylabel(ylabel)
+        ax.set_xlabel("")
+        ax.set_xticklabels([FRAMEWORK_LABELS[fw] for fw in FRAMEWORK_ORDER], rotation=0)
+        ax.legend(title="")
+
+    fig.suptitle(title)
+    save_figure(fig, filename)
+
+
+def plot_latency() -> None:
+    _plot_performance_metric(
+        metric_col="p95_ms_avg", ylabel="p95 затримка, мс",
+        title="Затримка відповіді (p95): Secure vs Vulnerable",
+        filename="03_p95_latency.png",
     )
 
-ax.set_xticks(list(x))
-ax.set_xticklabels(categories, rotation=30, ha="right")
-ax.set_ylabel("Attack Success Rate, %")
-ax.set_title("ASR за категоріями атак: Vulnerable vs Secure, усі фреймворки")
 
-# Легенда компактно збоку
-ax.legend(bbox_to_anchor=(1.02, 1), loc="upper left", fontsize=8)
-plt.tight_layout()
-plt.savefig(GRAPHS / "02_asr_by_attack_both_modes.png")
-plt.close()
+def plot_throughput() -> None:
+    _plot_performance_metric(
+        metric_col="rps_avg", ylabel="Запитів/с (RPS)",
+        title="Пропускна здатність: Secure vs Vulnerable",
+        filename="04_rps_throughput.png",
+    )
 
-# Третій графік
-perf = pd.read_csv(RESULTS / "day7" / "performance.csv")
-perf["framework"] = perf["target"].str.replace("-v", "").str.replace("-p", "")
-perf["mode"] = perf["target"].apply(lambda t: "vulnerable" if t.endswith("-v") else "secure")
 
-fig, axes = plt.subplots(1, 2, figsize=(11, 4.5), sharey=False)
-for ax, endpoint in zip(axes, ["search", "greet"]):
-    sub = perf[perf["endpoint"] == endpoint]
-    pv = sub.pivot(index="framework", columns="mode", values="p95_ms_avg")
-    pv = pv.reindex(["flask", "django", "fastapi"])
-    pv.plot(kind="bar", ax=ax, color=["#2ca02c", "#d62728"])
-    ax.set_title(f"/{endpoint}")
-    ax.set_ylabel("p95 затримка, мс")
-    ax.set_xlabel("")
-    ax.tick_params(axis="x", rotation=0)
-plt.suptitle("Затримка відповіді (p95): Secure vs Vulnerable")
-plt.tight_layout()
-plt.savefig(GRAPHS / "03_p95_latency.png")
-plt.close()
+# --------------------------------------------------------------------------
+# Графік 5 — порівняння трьох незалежних джерел виявлення вразливостей
+# --------------------------------------------------------------------------
 
-# Четвертий графік
-fig, axes = plt.subplots(1, 2, figsize=(11, 4.5), sharey=False)
-for ax, endpoint in zip(axes, ["search", "greet"]):
-    sub = perf[perf["endpoint"] == endpoint]
-    pv = sub.pivot(index="framework", columns="mode", values="rps_avg")
-    pv = pv.reindex(["flask", "django", "fastapi"])
-    pv.plot(kind="bar", ax=ax, color=["#2ca02c", "#d62728"])
-    ax.set_title(f"/{endpoint}")
-    ax.set_ylabel("Запитів/с (RPS)")
-    ax.set_xlabel("")
-    ax.tick_params(axis="x", rotation=0)
-plt.suptitle("Пропускна здатність: Secure vs Vulnerable")
-plt.tight_layout()
-plt.savefig(GRAPHS / "04_rps_throughput.png")
-plt.close()
+def plot_cross_tool_comparison() -> None:
+    """Три панелі поруч: кількість знахідок за власними тестами, ZAP і Semgrep.
+    Джерела різні за природою (атаки / DAST / SAST), тому навмисно не зводяться
+    в одну шкалу чи один стовпчик."""
+    zap_counts = load_csv("final-analysis/zap_counts.csv").set_index("target")
+    semgrep_counts = load_csv("final-analysis/semgrep_counts.csv").set_index("framework")
+    asr_mode = load_csv("final-analysis/asr_by_mode.csv")
 
-# П'ятий графік
-zap_counts = pd.read_csv(RESULTS / "day8_zap_counts.csv").set_index("target")
-semgrep_counts = pd.read_csv(RESULTS / "day8_semgrep_counts.csv").set_index("framework")
-asr_mode = pd.read_csv(RESULTS / "day8_asr_by_mode.csv")
+    fig, axes = plt.subplots(1, 3, figsize=FIGSIZE_TRIPLE)
 
-fig, axes = plt.subplots(1, 3, figsize=(14, 4.5))
+    own_tests = asr_mode[asr_mode["mode"] == "vulnerable"].set_index("framework")["success"]
+    own_tests = own_tests.reindex(FRAMEWORK_ORDER)
+    axes[0].bar(FRAMEWORK_ORDER, own_tests.values, color="#9467bd")
+    axes[0].set_title("Власні тести:\nуспішних атак (V-режим)")
+    axes[0].set_ylabel("Кількість")
 
-# Наші атаки: кількість success (успішних атак) по framework, V-режим
-sub = asr_mode[asr_mode["mode"] == "vulnerable"].set_index("framework")["success"]
-sub = sub.reindex(["flask", "django", "fastapi"])
-axes[0].bar(sub.index, sub.values, color="#9467bd")
-axes[0].set_title("Власні тести:\nуспішних атак (V-режим)")
-axes[0].set_ylabel("Кількість")
+    zap_targets = [f"{fw}-v" for fw in FRAMEWORK_ORDER]
+    zap_high_medium = zap_counts.loc[zap_targets, "High"] + zap_counts.loc[zap_targets, "Medium"]
+    axes[1].bar(FRAMEWORK_ORDER, zap_high_medium.values, color="#17becf")
+    axes[1].set_title("ZAP (DAST):\nHigh+Medium (V-ціль)")
 
-# ZAP: High+Medium по V-цілях
-zap_v = zap_counts.loc[["flask-v", "django-v", "fastapi-v"]]
-zap_risk = zap_v["High"] + zap_v["Medium"]
-axes[1].bar(["flask", "django", "fastapi"], zap_risk.values, color="#17becf")
-axes[1].set_title("ZAP:\nHigh+Medium (V-ціль)")
+    semgrep_total = semgrep_counts.reindex(FRAMEWORK_ORDER).sum(axis=1)
+    axes[2].bar(FRAMEWORK_ORDER, semgrep_total.values, color="#e377c2")
+    axes[2].set_title("Semgrep (SAST):\nусі знахідки (код V+P разом)")
 
-# Semgrep: усі знахідки (однакові для V і P, бо Semgrep бачить увесь код одразу)
-semgrep_total = semgrep_counts.reindex(["flask", "django", "fastapi"]).sum(axis=1)
-axes[2].bar(semgrep_total.index, semgrep_total.values, color="#e377c2")
-axes[2].set_title("Semgrep:\nвсі знахідки (код V+P разом)")
+    for ax in axes:
+        ax.set_xlabel("")
+        ax.set_xticks(range(len(FRAMEWORK_ORDER)))
+        ax.set_xticklabels([FRAMEWORK_LABELS[fw] for fw in FRAMEWORK_ORDER])
 
-for ax in axes:
-    ax.set_xlabel("")
-plt.suptitle("Порівняння трьох незалежних джерел виявлення вразливостей")
-plt.tight_layout()
-plt.savefig(GRAPHS / "05_cross_tool_comparison.png")
-plt.close()
+    fig.suptitle("Порівняння трьох незалежних джерел виявлення вразливостей")
+    save_figure(fig, "05_cross_tool_comparison.png")
 
-print("Усі 5 графіків збережено в analysis/graphs/")
+
+# --------------------------------------------------------------------------
+# Точка входу
+# --------------------------------------------------------------------------
+
+GRAPH_BUILDERS = [
+    ("Графік 1 — тип походження вразливостей", plot_bypass_type),
+    ("Графік 2 — ASR за категоріями атак", plot_asr_by_attack),
+    ("Графік 3 — затримка p95", plot_latency),
+    ("Графік 4 — пропускна здатність", plot_throughput),
+    ("Графік 5 — порівняння інструментів", plot_cross_tool_comparison),
+]
+
+
+def main() -> None:
+    plt.rcParams["figure.dpi"] = FIGURE_DPI
+    for description, builder in GRAPH_BUILDERS:
+        print(description)
+        try:
+            builder()
+        except FileNotFoundError as exc:
+            print(f"  ПРОПУЩЕНО: {exc}", file=sys.stderr)
+    print(f"\nГотово. Графіки у {GRAPHS_DIR.relative_to(ROOT_DIR)}/")
+
+
+if __name__ == "__main__":
+    main()

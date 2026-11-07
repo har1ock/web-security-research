@@ -1,6 +1,6 @@
 set -euo pipefail
 
-mkdir -p results/day7/k6 results/day7/stats
+mkdir -p results/load-testing/k6 results/load-testing/stats
 
 declare -A PORTS=(
   [flask-v]=5001 [flask-p]=5101
@@ -22,7 +22,7 @@ for name in "${!PORTS[@]}"; do
     echo "=== $name / $endpoint ==="
     for run in 1 2 3 4 5; do
       echo "-- прогін $run --"
-      stats_file="results/day7/stats/${name}-${endpoint}-run${run}.csv"
+      stats_file="results/load-testing/stats/${name}-${endpoint}-run${run}.csv"
       echo "timestamp,cpu_perc,mem_usage" > "$stats_file"
 
       # фонове знімання CPU/пам'яті кожні 2с, поки k6 виконується
@@ -37,7 +37,7 @@ for name in "${!PORTS[@]}"; do
       stats_pid=$!
 
       k6 run --env BASE_URL="$base_url" \
-        --summary-export="results/day7/k6/${name}-${endpoint}-run${run}.json" \
+        --summary-export="results/load-testing/k6/${name}-${endpoint}-run${run}.json"
         "perf/${endpoint}.js" || true
 
       kill "$stats_pid" 2>/dev/null || true

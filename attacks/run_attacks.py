@@ -10,7 +10,7 @@ import requests
 from targets import CSRF_FIELD, LOGIN_USER, TARGETS
 
 ATTACKS_DIR = Path(__file__).parent
-RESULTS_DIR = ATTACKS_DIR.parent / "results" / "day4"
+RESULTS_DIR = ATTACKS_DIR.parent / "results" / "security-tests"
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 RAW_LOG = RESULTS_DIR / "raw_log.jsonl"
 SUMMARY_CSV = RESULTS_DIR / "security.csv"
