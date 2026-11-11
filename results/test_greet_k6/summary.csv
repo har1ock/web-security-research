@@ -1,0 +1,3 @@
+target,endpoint,rps_avg,rps_std,p95_ms_avg,p95_ms_std,avg_ms_avg,fail_rate_avg,cpu_pct_avg,mem_mb_avg
+django-p,greet,588.793,109.6,177.221,44.178,84.321,0.0,0.0,0.0
+django-v,greet,751.104,93.726,123.504,43.173,65.337,0.0,0.0,0.0

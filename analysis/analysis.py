@@ -161,7 +161,7 @@ def compute_performance_overhead(performance: pd.DataFrame) -> pd.DataFrame:
     )
 
     pivot["RPS_overhead_%"] = (
-        (pivot[("rps_avg", "secure")] - pivot[("rps_avg", "vulnerable")])
+        (pivot[("rps_avg", "vulnerable")] - pivot[("rps_avg", "secure")])
         / pivot[("rps_avg", "vulnerable")] * 100
     ).round(1)
     pivot["p95_overhead_%"] = (

@@ -9,7 +9,7 @@ OUT = Path("results/load-testing/performance.csv")
 
 TARGETS = ["flask-v", "flask-p", "django-v", "django-p", "fastapi-v", "fastapi-p"]
 ENDPOINTS = ["search", "greet"]
-RUNS_TO_KEEP = [2, 3, 4, 5]  # прогін 1 відкидаємо як прогрів
+RUNS_TO_KEEP = list(range(2, 11))
 
 
 def parse_mem(mem_usage: str):
