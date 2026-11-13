@@ -2,7 +2,7 @@ from django.conf import settings
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
 from django.db import DatabaseError, connection
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse as DjangoJsonResponse
 from django.middleware.csrf import get_token
 from django.template import Context, Template
 from django.utils.safestring import mark_safe
@@ -37,6 +37,11 @@ COMMENTS_HTML = """
 _search_tmpl = Template(SEARCH_HTML)
 _comments_tmpl = Template(COMMENTS_HTML)
 _greet_tmpl = Template("<h1>Hello {{ n }}</h1>")
+
+
+def JsonResponse(data, **kwargs):
+    kwargs.setdefault("json_dumps_params", {"ensure_ascii": False})
+    return DjangoJsonResponse(data, **kwargs)
 
 
 def render(tmpl, **ctx):

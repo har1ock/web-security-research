@@ -22,6 +22,7 @@ app.config.update(
     # V: браузер шле cookie і з чужих сайтів. P: Lax блокує частину міжсайтових POST
     SESSION_COOKIE_SAMESITE="Lax" if SECURE else None,
 )
+app.json.ensure_ascii = False
 
 # Ініціалізація лімітера поза app.config
 limiter = Limiter(get_remote_address, app=app, enabled=SECURE)
